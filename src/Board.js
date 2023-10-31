@@ -1,15 +1,35 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 
 function Board() {
-  const [posts, setPosts] = useState([]); // 게시글 목록을 저장하는 상태
+  const [posts, setPosts] = useState([]);
+  const [newPost, setNewPost] = useState('');
 
-  const [newPost, setNewPost] = useState(''); // 새로운 게시글 내용을 저장하는 상태
+  const fetchPosts = async () => {
+    try {
+      const response = await axios.get('http://localhost:3002/api/posts'); // 서버에서 게시글 목록을 가져오는 엔드포인트
+      setPosts(response.data);
+    } catch (error) {
+      console.error('게시글 불러오기 오류:', error);
+    }
+  };
 
-  // 게시글 추가 함수
-  const addPost = () => {
-    if (newPost.trim() === '') return; // 빈 내용의 게시글은 추가하지 않음
-    setPosts([...posts, newPost]);
-    setNewPost('');
+  useEffect(() => {
+    fetchPosts();
+  }, []);
+
+  const addPost = async () => {
+    if (newPost.trim() === '') return;
+
+    try {
+      const response = await axios.post('http://localhost:3002/api/posts', { content: newPost }); // 서버에 새 게시글 추가 요청
+      if (response.status === 200) {
+        fetchPosts(); // 게시글 추가 후 목록 다시 가져오기
+        setNewPost('');
+      }
+    } catch (error) {
+      console.error('게시글 추가 오류:', error);
+    }
   };
 
   return (
@@ -25,8 +45,8 @@ function Board() {
         <button onClick={addPost}>게시</button>
       </div>
       <ul>
-        {posts.map((post, index) => (
-          <li key={index}>{post}</li>
+        {posts.map((post) => (
+          <li key={post.id}>{post.content}</li>
         ))}
       </ul>
     </div>
